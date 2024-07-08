@@ -13,7 +13,9 @@ namespace EAAddinFramework
 	/// </summary>
 	public abstract class EAAddinBase
 	{
-		public const string locationTreeview = "TreeView";
+        private static DateTime lastErrorTimestamp;
+
+        public const string locationTreeview = "TreeView";
 		public const string locationMainMenu= "MainMenu";
 		public const string locationDiagram = "Diagram";
 		protected bool fullyLoaded { get; set; } = false;
@@ -60,8 +62,27 @@ namespace EAAddinFramework
                 exceptionInfo += Environment.NewLine + "Inner Exception: " + e.InnerException.Message + Environment.NewLine
                     + "Stacktrace: " + e.InnerException.StackTrace;
             Logger.logError(exceptionInfo);
-	      	MessageBox.Show(exceptionInfo,"Unexpected Exception",MessageBoxButtons.OK,MessageBoxIcon.Error);
-		}
+
+			bool showMessageBox = false;
+			if (lastErrorTimestamp == null)
+			{
+				showMessageBox = true;
+            } else
+			{
+                TimeSpan difference = DateTime.Now - lastErrorTimestamp;
+				showMessageBox = difference.TotalMinutes > 5;
+            }
+
+			if (showMessageBox)
+			{
+				// Only show one messagebox every 5 minutes to notify the user something went wrong they should look into.
+				// All logs still go to Logger, but that can get lost in the noise of running a script
+				// If this is displayed on every error then a bad script will spam MessageBoxes which is a frustrating user experience.
+				MessageBox.Show(exceptionInfo, "Unexpected Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+
+            lastErrorTimestamp = DateTime.Now;
+        }
 
 
  	    // define menu constants
